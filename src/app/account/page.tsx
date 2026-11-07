@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CrownIcon } from "@/components/ui/icons";
+import { getAdminSlug } from "@/lib/admin/path";
 import { getCurrentProfile, getCurrentUser, getLatestSubscription, isPremiumUser } from "@/lib/data/user";
 import { APP_TIMEZONE } from "@/lib/utils/date";
 import { openBillingPortal } from "../subscribe/actions";
@@ -29,6 +30,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     getLatestSubscription(),
   ]);
   const status = sub ? STATUS_LABEL[sub.status] : null;
+  // رابط لوحة التحكم يظهر للمشرف فقط — المسار السري لا يُرسل لغيره أبداً
+  const adminSlug = profile?.role === "admin" ? getAdminSlug() : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-4">
@@ -85,6 +88,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           )
         )}
       </section>
+
+      {adminSlug && (
+        <Link
+          href={`/${adminSlug}`}
+          rel="noreferrer"
+          className="flex items-center justify-between rounded-2xl border border-brand/40 bg-brand/5 p-5 font-bold hover:bg-brand/10"
+        >
+          🛠️ لوحة التحكم
+          <span className="text-sm text-muted">←</span>
+        </Link>
+      )}
 
       <form action="/auth/signout" method="post">
         <button type="submit" className="text-sm font-semibold text-live hover:underline">
