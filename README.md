@@ -27,7 +27,11 @@ src/
 │   ├── (home)/page.tsx         # ✅ الرئيسية: جدول المباريات الحية واليومية
 │   ├── (home)/loading.tsx      # Skeleton أثناء التحميل
 │   ├── match/[id]/page.tsx     # ✅ تفاصيل المباراة: البث، الأحداث، الإحصائيات، التشكيلة
-│   ├── subscribe/page.tsx      # ⏳ الخطوة 3: الاشتراك 1.99$ شهرياً
+│   ├── subscribe/              # ✅ صفحة الاشتراك + الدفع (Paddle) + صفحة نجاح الدفع
+│   ├── login/                  # ✅ تسجيل الدخول برمز البريد / الرابط السحري / Google
+│   ├── account/                # ✅ حسابي: حالة الاشتراك وإدارته
+│   ├── auth/                   # callback + signout
+│   ├── api/webhooks/paddle/    # ✅ استقبال أحداث Paddle وتفعيل Premium
 │   └── admin/page.tsx          # ⏳ الخطوة 4: لوحة التحكم
 ├── components/
 │   ├── layout/                 # Header, Footer
@@ -38,7 +42,8 @@ src/
 │   ├── ads/                    # BannerAd (تُخفى للمشتركين), PremiumPromo
 │   └── ui/                     # أيقونات SVG، ComingSoon
 ├── lib/
-│   ├── supabase/               # عملاء Supabase (server / browser) + config
+│   ├── supabase/               # عملاء Supabase (server / browser / admin / proxy) + config
+│   ├── paddle/                 # التحقق من التوقيع، منطق المزامنة، Customer Portal
 │   ├── data/                   # طبقة البيانات: matches.ts, user.ts, mock-data.ts
 │   └── utils/                  # التواريخ والمنطقة الزمنية، حالات المباراة
 └── types/database.ts           # أنواع الجداول
@@ -61,3 +66,52 @@ supabase/migrations/            # مخطط قاعدة البيانات + سيا�
   - إعلان مدته 5 ثوانٍ قبل البث للمستخدمين المجانيين
 - **التحديث اللحظي**: مع Supabase يتحدث كل شيء فوراً عبر Realtime. بدونها تتحدث الصفحة كل 30 ثانية، ولا ينقطع الفيديو ولا يتغير التبويب المفتوح.
 - **البيانات**: الإحصائيات محفوظة في `matches.stats`، والتشكيلات في `matches.lineups`، والأحداث في جدول `match_events`. الأشكال الكاملة في `src/types/database.ts`.
+
+## الاشتراكات والمصادقة
+
+### كيف يعمل الاشتراك
+1. المستخدم يسجل الدخول (رمز من 6 أرقام أو رابط في البريد، أو Google).
+2. في `/subscribe` يضغط «اشترك الآن» فتُفتح نافذة دفع Paddle، ويُمرَّر معها `user_id` في `customData`.
+3. بعد الدفع ترسل Paddle حدث webhook إلى `/api/webhooks/paddle`، والخادم:
+   - يتحقق من التوقيع (HMAC، وحد أقصى 5 دقائق).
+   - يتجاهل الأحداث المكررة، والأحداث القديمة التي تصل متأخرة.
+   - يحفظ الاشتراك ويحدّث `profiles.is_premium` و `premium_until`.
+4. صفحة `/subscribe/success` تنتظر التفعيل وتتحدث تلقائياً. بعدها تختفي الإعلانات ويُفتح بث HD (النسخة المجانية حدها 480p).
+5. الإلغاء من «حسابي» ← بوابة Paddle. يبقى Premium حتى نهاية الشهر المدفوع.
+
+> **أمان:** المستخدم لا يستطيع تعديل `is_premium` بنفسه، فسياسات RLS لا تسمح بالكتابة. الكتابة تتم فقط من الـ webhook بمفتاح `service_role`.
+
+### إعداد Paddle
+1. **Catalog → Products:** أنشئ منتج «RJ Premium» وسعراً شهرياً بـ 1.99 USD، وانسخ `pri_...`.
+2. **Developer Tools → Authentication:**
+   - أنشئ Client-side token.
+   - أنشئ API key بصلاحية Customer portal sessions.
+3. **Developer Tools → Notifications:** أضف وجهة webhook على `https://<دومينك>/api/webhooks/paddle`، وفعّل أحداث `subscription.*`، ثم انسخ الـ Secret.
+4. **Checkout → Checkout settings:** اضبط Default payment link على `https://<دومينك>/subscribe`. في الإنتاج يجب أن يوافق Paddle على الدومين.
+5. ضع القيم في متغيرات البيئة كما في `.env.example`، وابدأ بـ `sandbox` واختبر ببطاقات Paddle التجريبية.
+
+### إعداد Supabase Auth (الإنتاج)
+- **Authentication → URL Configuration:** ضع Site URL على دومينك، وأضف `https://<دومينك>/auth/callback` إلى Redirect URLs.
+- **Authentication → Email Templates:** انسخ القالبين من `supabase/templates/` (يحتويان الرمز `{{ .Token }}` والرابط).
+- **Authentication → SMTP:** اربط مزود بريد (Resend أو SES…). مزود Supabase الافتراضي محدود جداً للإنتاج.
+- **Google (اختياري):** فعّله من Providers، ثم ضع `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`.
+
+### وضع العرض (بدون Supabase)
+إذا لم تُضبط مفاتيح Supabase، يظهر في صفحة الاشتراك زر «جرّب Premium» لمعاينة التجربة بدون دفع. هذا الزر لا يعمل أبداً عند ربط قاعدة البيانات.
+
+## الاختبارات
+
+```bash
+npm test            # اختبارات الوحدة: التوقيع + منطق الاشتراك (Vitest)
+```
+
+اختبار شامل (39 فحصاً) على Supabase محلي يتطلب Docker:
+
+```bash
+npx supabase start && npx supabase db reset
+bash scripts/dev-hls-stream.sh &        # بث HLS محلي
+npm run build && npx next start -p 3100 &
+npm run test:e2e
+```
+
+لتفاصيل `.env.local` المطلوب انظر رأس الملف `tests/e2e/subscription.e2e.cjs`.

@@ -3,6 +3,8 @@
 import type Hls from "hls.js";
 import type { Level } from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { FREE_MAX_HEIGHT } from "@/lib/premium";
 import { PreRollAd } from "./PreRollAd";
 import {
   FullscreenIcon,
@@ -20,7 +22,7 @@ interface VideoPlayerProps {
   src: string;
   title: string;
   isLive: boolean;
-  /** المشتركون: بدون إعلان قبل البث */
+  /** المشتركون: بدون إعلان قبل البث + جودة HD */
   isPremium: boolean;
   poster?: string;
 }
@@ -48,6 +50,8 @@ export function VideoPlayer({ src, title, isLive, isPremium, poster }: VideoPlay
   const [volume, setVolume] = useState(1);
   const [levels, setLevels] = useState<Level[]>([]);
   const [currentLevel, setCurrentLevel] = useState(-1); // -1 = تلقائي
+  /** أعلى مستوى جودة مسموح (للنسخة المجانية) — -1 = بدون حد */
+  const [maxLevel, setMaxLevel] = useState(-1);
   const [activeHeight, setActiveHeight] = useState<number | null>(null);
   const [showQuality, setShowQuality] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -81,6 +85,15 @@ export function VideoPlayer({ src, title, isLive, isPremium, poster }: VideoPlay
 
       hls.on(HlsLib.Events.MANIFEST_PARSED, (_e, data) => {
         setLevels(data.levels);
+        if (!isPremium) {
+          // النسخة المجانية: أعلى جودة حتى FREE_MAX_HEIGHT (المستويات مرتبة تصاعدياً)
+          let cap = 0;
+          data.levels.forEach((level, i) => {
+            if (level.height <= FREE_MAX_HEIGHT) cap = i;
+          });
+          hls.autoLevelCapping = cap;
+          setMaxLevel(cap);
+        }
         video.play().catch(() => setStatus("paused"));
       });
       hls.on(HlsLib.Events.LEVEL_SWITCHED, (_e, data) => {
@@ -110,7 +123,7 @@ export function VideoPlayer({ src, title, isLive, isPremium, poster }: VideoPlay
       setStatus("error");
       setError("متصفحك لا يدعم تشغيل البث المباشر.");
     }
-  }, [destroy, isLive, src]);
+  }, [destroy, isLive, isPremium, src]);
 
   useEffect(() => destroy, [destroy]);
 
@@ -202,7 +215,10 @@ export function VideoPlayer({ src, title, isLive, isPremium, poster }: VideoPlay
     void video.play();
   };
 
+  const isLocked = (level: number) => maxLevel !== -1 && level > maxLevel;
+
   const selectLevel = (level: number) => {
+    if (isLocked(level)) return;
     if (hlsRef.current) hlsRef.current.currentLevel = level;
     setCurrentLevel(level);
     setShowQuality(false);
@@ -387,21 +403,35 @@ export function VideoPlayer({ src, title, isLive, isPremium, poster }: VideoPlay
                   <ul role="menu" className="absolute end-0 bottom-11 min-w-32 overflow-hidden rounded-lg bg-black/90 py-1 text-sm ring-1 ring-white/10">
                     {[{ index: -1, label: "تلقائي" }, ...levels.map((l, i) => ({ index: i, label: `${l.height}p` }))]
                       .reverse()
-                      .map((option) => (
-                        <li key={option.index}>
-                          <button
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={currentLevel === option.index}
-                            onClick={() => selectLevel(option.index)}
-                            className={`w-full px-4 py-1.5 text-start hover:bg-white/10 ${
-                              currentLevel === option.index ? "font-bold text-brand" : ""
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        </li>
-                      ))}
+                      .map((option) =>
+                        isLocked(option.index) ? (
+                          <li key={option.index}>
+                            <Link
+                              href="/subscribe"
+                              role="menuitem"
+                              title="جودة HD للمشتركين"
+                              className="flex w-full items-center justify-between gap-3 px-4 py-1.5 text-white/50 hover:bg-white/10"
+                            >
+                              {option.label}
+                              <span className="rounded bg-gold px-1 text-[9px] font-black text-black">🔒 HD</span>
+                            </Link>
+                          </li>
+                        ) : (
+                          <li key={option.index}>
+                            <button
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={currentLevel === option.index}
+                              onClick={() => selectLevel(option.index)}
+                              className={`w-full px-4 py-1.5 text-start hover:bg-white/10 ${
+                                currentLevel === option.index ? "font-bold text-brand" : ""
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          </li>
+                        ),
+                      )}
                   </ul>
                 )}
               </div>

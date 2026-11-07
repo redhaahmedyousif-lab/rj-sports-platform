@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { CrownIcon } from "@/components/ui/icons";
-
-const PERKS = ["بدون إعلانات نهائياً", "بث بجودة عالية HD", "إشعارات الأهداف لحظياً", "إحصائيات متقدمة"];
+import { PREMIUM_PERKS as PERKS } from "@/lib/premium";
 
 /** بطاقة ترويج الاشتراك — تظهر لغير المشتركين */
 export function PremiumPromo() {
