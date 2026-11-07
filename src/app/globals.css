@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* ألوان الهوية — عدّلها هنا لتتغير في كل الموقع */
+@theme {
+  --color-bg: #0b0f14;
+  --color-surface: #131a22;
+  --color-surface-2: #1a232e;
+  --color-border: #243040;
+  --color-muted: #8b98a9;
+  --color-fg: #e8edf3;
+  --color-brand: #22c55e;
+  --color-brand-fg: #052e14;
+  --color-live: #ef4444;
+  --color-gold: #f5b83d;
+
+  --font-sans: var(--font-cairo), system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* إخفاء شريط التمرير الأفقي في شريط التواريخ */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
