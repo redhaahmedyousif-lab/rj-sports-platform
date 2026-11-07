@@ -9,7 +9,8 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "node tests/e2e/subscription.e2e.cjs",
-    "test:e2e:admin": "node tests/e2e/admin.e2e.cjs"
+    "test:e2e:admin": "node tests/e2e/admin.e2e.cjs",
+    "test:e2e:reviews": "node tests/e2e/reviews.e2e.cjs"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.6",

@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/matches", label: "المباريات", icon: "⚽" },
   { href: "/matches/new", label: "مباراة جديدة", icon: "＋" },
   { href: "/teams", label: "الفرق والبطولات", icon: "🛡️" },
+  { href: "/reviews", label: "التقييمات", icon: "⭐" },
 ];
 
 /** القسم الحالي بغض النظر عن البادئة (المسار السري أو الداخلي بعد rewrite) */

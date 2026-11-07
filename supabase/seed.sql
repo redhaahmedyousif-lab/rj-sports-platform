@@ -38,3 +38,21 @@ insert into public.match_events (match_id, minute, type, team, player, secondary
   ('c0000000-0000-4000-8000-000000000003', 55, 'goal', 'away', 'لاعب الرفاع', null),
   ('c0000000-0000-4000-8000-000000000003', 70, 'goal', 'home', 'لاعب المحرق', null),
   ('c0000000-0000-4000-8000-000000000003', 88, 'penalty_goal', 'away', 'لاعب الرفاع', null);
+
+-- تقييمات تجريبية (8 تقييمات — أكثر من صفحة واحدة لاختبار «عرض المزيد»)
+insert into public.reviews (name, rating, body, badge, reviewer_id, created_at) values
+  ('أبو فهد', 5, 'أفضل تطبيق نتائج جربته، التحديث لحظي والبث بدون تقطيع.', 'premium', 'seed-1', now() - interval '3 hours'),
+  ('سارة المطيري', 5, 'التصميم الداكن مريح للعين والإحصائيات مرتبة جداً.', 'member', 'seed-2', now() - interval '20 hours'),
+  ('محمد الكعبي', 4, 'ممتاز بشكل عام، ودي يكون فيه إشعار عند تسجيل الأهداف.', 'guest', 'seed-3', now() - interval '1 day 2 hours'),
+  ('نوف', 5, 'صفحة المباراة فيها كل شيء: الأحداث والتشكيلة والإحصائيات.', 'member', 'seed-4', now() - interval '2 days'),
+  ('عبدالله', 3, 'الإعلان قبل البث مزعج شوي، اشتركت وارتحت.', 'guest', 'seed-5', now() - interval '3 days'),
+  ('ريم الحربي', 5, 'بأقل من دولارين بالشهر وبدون إعلانات؟ صفقة ممتازة.', 'premium', 'seed-6', now() - interval '4 days'),
+  ('خالد', 4, 'سريع جداً على الجوال، وأحب شريط التواريخ.', 'member', 'seed-7', now() - interval '6 days'),
+  ('يوسف البلوشي', 5, 'تابعت الكلاسيكو كامل بجودة HD بدون أي مشكلة.', 'guest', 'seed-8', now() - interval '9 days');
+
+insert into public.review_reactions (review_id, emoji, reactor_id)
+select r.id, e.emoji, 'seed-reactor-' || g
+from public.reviews r
+cross join (values ('👍'), ('❤️'), ('🔥')) as e(emoji)
+cross join generate_series(1, 3) as g
+where r.reviewer_id in ('seed-1', 'seed-6');

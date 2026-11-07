@@ -1,4 +1,6 @@
 import { BannerAd } from "@/components/ads/BannerAd";
+import { PartnersSection } from "@/components/home/PartnersSection";
+import { ReviewsSection } from "@/components/reviews/ReviewsSection";
 import { PremiumPromo } from "@/components/ads/PremiumPromo";
 import { DateSelector } from "@/components/matches/DateSelector";
 import { FeaturedMatch } from "@/components/matches/FeaturedMatch";
@@ -28,48 +30,53 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
     matches.find((m) => m.is_featured && m.stream_url) ?? liveMatches.find((m) => m.stream_url);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-      <LiveRefresher enabled={liveMatches.length > 0} />
+    <div className="space-y-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <LiveRefresher enabled={liveMatches.length > 0} />
 
-      {/* العمود الرئيسي */}
-      <div className="min-w-0 space-y-4">
-        <DateSelector selected={date} filter={filter === "live" ? "live" : undefined} />
+        {/* العمود الرئيسي */}
+        <div className="min-w-0 space-y-4">
+          <DateSelector selected={date} filter={filter === "live" ? "live" : undefined} />
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <MatchFilters
-            active={filter}
-            date={date === today ? undefined : date}
-            liveCount={liveMatches.length}
-            totalCount={matches.length}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <MatchFilters
+              active={filter}
+              date={date === today ? undefined : date}
+              liveCount={liveMatches.length}
+              totalCount={matches.length}
+            />
+          </div>
+
+          {featured && filter === "all" && <FeaturedMatch match={featured} />}
+
+          <BannerAd slot="home-top" hidden={isPremium} />
+
+          {groups.length === 0 ? (
+            <EmptyState live={filter === "live"} />
+          ) : (
+            groups.map((group, i) => (
+              <div key={group.league.id} className="space-y-4">
+                <LeagueSection group={group} />
+                {/* إعلان بين الدوريات كل 3 أقسام */}
+                {i % 3 === 2 && i !== groups.length - 1 && (
+                  <BannerAd slot={`home-inline-${i}`} hidden={isPremium} />
+                )}
+              </div>
+            ))
+          )}
         </div>
 
-        {featured && filter === "all" && <FeaturedMatch match={featured} />}
-
-        <BannerAd slot="home-top" hidden={isPremium} />
-
-        {groups.length === 0 ? (
-          <EmptyState live={filter === "live"} />
-        ) : (
-          groups.map((group, i) => (
-            <div key={group.league.id} className="space-y-4">
-              <LeagueSection group={group} />
-              {/* إعلان بين الدوريات كل 3 أقسام */}
-              {i % 3 === 2 && i !== groups.length - 1 && (
-                <BannerAd slot={`home-inline-${i}`} hidden={isPremium} />
-              )}
-            </div>
-          ))
-        )}
+        {/* الشريط الجانبي (سطح المكتب) */}
+        <aside className="hidden space-y-4 lg:block">
+          <div className="sticky top-20 space-y-4">
+            {!isPremium && <PremiumPromo />}
+            <BannerAd slot="home-sidebar" size="rectangle" hidden={isPremium} />
+          </div>
+        </aside>
       </div>
-
-      {/* الشريط الجانبي (سطح المكتب) */}
-      <aside className="hidden space-y-4 lg:block">
-        <div className="sticky top-20 space-y-4">
-          {!isPremium && <PremiumPromo />}
-          <BannerAd slot="home-sidebar" size="rectangle" hidden={isPremium} />
-        </div>
-      </aside>
+      {/* أسفل الصفحة: آراء المستخدمين ثم القنوات والشركاء */}
+      <ReviewsSection />
+      <PartnersSection />
     </div>
   );
 }
