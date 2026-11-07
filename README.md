@@ -1,168 +1,439 @@
 # RJ Sports Platform ⚽
 
-منصة رياضية لنتائج المباريات المباشرة والبث، مبنية بـ **Next.js (App Router) + Tailwind CSS + Supabase**.
+منصة رياضية عربية لنتائج المباريات المباشرة والبث، شبيهة بفكرة FotMob، مع اشتراك شهري بـ **1.99$** لإزالة الإعلانات وفتح البث بجودة HD، ولوحة تحكم مخفية لإدارة المباريات لحظياً.
 
-## التشغيل
+**التقنيات:** Next.js 16 (App Router) · React 19 · Tailwind CSS 4 · Supabase (قاعدة البيانات، المصادقة، Realtime) · Paddle Billing · hls.js
+
+---
+
+## المحتويات
+1. [المزايا](#المزايا)
+2. [التشغيل السريع (بدون إعداد)](#التشغيل-السريع-بدون-إعداد)
+3. [المتطلبات](#المتطلبات)
+4. [متغيرات البيئة](#متغيرات-البيئة)
+5. [ربط Supabase](#ربط-supabase)
+6. [ربط Paddle (الدفع)](#ربط-paddle-الدفع)
+7. [لوحة التحكم](#لوحة-التحكم)
+8. [النشر على الإنتاج](#النشر-على-الإنتاج)
+9. [قائمة التحقق قبل الإطلاق](#قائمة-التحقق-قبل-الإطلاق)
+10. [الأوامر](#الأوامر)
+11. [الاختبارات](#الاختبارات)
+12. [هيكل المشروع](#هيكل-المشروع)
+13. [كيف يعمل النظام](#كيف-يعمل-النظام)
+14. [حل المشاكل الشائعة](#حل-المشاكل-الشائعة)
+
+---
+
+## المزايا
+
+| القسم | ما يتضمنه |
+|---|---|
+| **الرئيسية** | مباريات اليوم مجمّعة حسب البطولة، شريط تواريخ (±3 أيام)، تبويب «مباشر الآن»، مباراة مميزة، تحديث لحظي للنتائج |
+| **صفحة المباراة** | مشغل بث HLS (`.m3u8`)، تسلسل الأحداث، إحصائيات حية، التشكيلة على ملعب مرسوم، عدّ تنازلي قبل الانطلاق |
+| **المشغل** | اختيار الجودة، زر العودة للمباشر، ملء الشاشة، صورة داخل صورة، اختصارات `K` `M` `F`، استعادة تلقائية من انقطاع الشبكة |
+| **الاشتراك** | Paddle (يتكفل بالضرائب الدولية)، تفعيل تلقائي عبر Webhook، إدارة الاشتراك والإلغاء من بوابة Paddle |
+| **Premium مقابل المجاني** | بدون إعلانات، بدون إعلان قبل البث، جودة HD (المجاني حتى 480p) |
+| **الدخول** | رمز من 6 أرقام أو رابط في البريد (بدون كلمة مرور)، Google اختياري |
+| **لوحة التحكم** | مسار سري، إحصائيات لحظية، إدارة المباريات والفرق، تحكم مباشر بالنتيجة والدقيقة والأحداث |
+| **الواجهة** | عربية بالكامل (RTL)، وضع داكن، متجاوبة مع الجوال |
+
+---
+
+## التشغيل السريع (بدون إعداد)
+
+الموقع يعمل فوراً **ببيانات تجريبية** بدون أي مفاتيح أو قاعدة بيانات:
 
 ```bash
 npm install
-cp .env.example .env.local   # اختياري: بدون مفاتيح Supabase يعمل الموقع على بيانات تجريبية
+```
+
+```bash
 npm run dev
 ```
 
-ثم افتح http://localhost:3000
+افتح http://localhost:3000
 
-### ربط Supabase
-1. أنشئ مشروعاً على supabase.com.
-2. من **SQL Editor** شغّل ملفات `supabase/migrations/` بالترتيب (`0001_init.sql` ثم `0002_match_details.sql`).
-3. ضع `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_ANON_KEY` في `.env.local`.
-4. لجعل حسابك مشرفاً: `update profiles set role = 'admin' where id = '<user-id>';`
+في هذا **الوضع التجريبي**:
+- تظهر مباريات وهمية، مواعيدها محسوبة بحيث تظهر دائماً مباريات «مباشرة».
+- البث يستخدم رابط اختبار عام من Mux.
+- صفحة الاشتراك فيها زر «جرّب Premium» لمعاينة التجربة بدون دفع.
+- تسجيل الدخول ولوحة التحكم معطّلان.
+
+> زر «جرّب Premium» لا يعمل أبداً بعد ربط Supabase.
+
+---
+
+## المتطلبات
+
+- **Node.js 20.9 أو أحدث** (يتطلبه Next.js 16)، و npm.
+- **للتشغيل الكامل:**
+  - حساب [Supabase](https://supabase.com).
+  - حساب [Paddle](https://www.paddle.com): ابدأ بحساب Sandbox للتجربة.
+- **للتطوير والاختبار المحلي الكامل (اختياري):**
+  - [Docker](https://docs.docker.com/get-docker/) لتشغيل Supabase على جهازك.
+  - `ffmpeg` و `python3` لتوليد بث HLS محلي للاختبار.
+
+---
+
+## متغيرات البيئة
+
+انسخ الملف `.env.example` إلى `.env.local` وعبّئ القيم:
+
+```bash
+cp .env.example .env.local
+```
+
+| المتغير | سري؟ | مطلوب | الوصف |
+|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | لا | للتشغيل الكامل | من Supabase: Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | لا | للتشغيل الكامل | المفتاح العام (anon) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **نعم** | للاشتراكات | مفتاح `service_role`، يستخدمه Webhook الدفع فقط |
+| `NEXT_PUBLIC_SITE_URL` | لا | مستحسن | دومين الموقع (لروابط البريد وGoogle)، مثل `https://rjsports.com` |
+| `NEXT_PUBLIC_APP_TIMEZONE` | لا | لا | المنطقة الزمنية للمواعيد (الافتراضي `Asia/Bahrain`) |
+| `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` | لا | لا | `true` لإظهار زر Google |
+| `NEXT_PUBLIC_PADDLE_ENV` | لا | للدفع | `sandbox` للتجربة أو `production` |
+| `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` | لا | للدفع | Client-side token (يبدأ بـ `test_` أو `live_`) |
+| `NEXT_PUBLIC_PADDLE_PRICE_ID` | لا | للدفع | معرّف السعر الشهري `pri_...` |
+| `PADDLE_WEBHOOK_SECRET` | **نعم** | للدفع | سر التحقق من توقيع Webhook |
+| `PADDLE_API_KEY` | **نعم** | لإدارة الاشتراك | لفتح بوابة العميل (الإلغاء والفواتير) |
+| `ADMIN_PATH` | **نعم** | للوحة التحكم | المسار السري للوحة (انظر [لوحة التحكم](#لوحة-التحكم)) |
+| `NEXT_PUBLIC_DEMO_STREAM_URL` | لا | لا | رابط بث للبيانات التجريبية فقط |
+
+> ⚠️ **تنبيهات مهمة:**
+> - المتغيرات التي تبدأ بـ `NEXT_PUBLIC_` تُضمَّن في الكود المرسَل للمتصفح، فلا تضع فيها أي سر.
+> - بعد تغيير أي منها أعد البناء (`npm run build`).
+> - ملف `.env.local` مستثنى من Git ولن يُرفع.
+
+---
+
+## ربط Supabase
+
+### 1. إنشاء المشروع وقاعدة البيانات
+1. أنشئ مشروعاً من [لوحة Supabase](https://supabase.com/dashboard).
+2. من **SQL Editor** شغّل ملفات `supabase/migrations/` **بالترتيب**:
+
+   | الملف | المحتوى |
+   |---|---|
+   | `0001_init.sql` | الدوريات، الفرق، المباريات، الأخبار، المستخدمون، صلاحيات RLS |
+   | `0002_match_details.sql` | أحداث المباراة والتشكيلات |
+   | `0003_subscriptions.sql` | الاشتراكات وسجل أحداث Paddle |
+   | `0004_admin.sql` | دوال لوحة التحكم (إضافة/حذف الأحداث مع تحديث النتيجة) |
+
+   أو باستخدام Supabase CLI:
+
+   ```bash
+   npx supabase link --project-ref <project-ref>
+   ```
+
+   ```bash
+   npx supabase db push
+   ```
+
+3. **(اختياري)** بيانات تجريبية: شغّل `supabase/seed.sql` لإضافة 3 بطولات و6 فرق و3 مباريات.
+4. ضع المفاتيح في `.env.local`: `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_ANON_KEY` و `SUPABASE_SERVICE_ROLE_KEY`.
+
+### 2. إعداد المصادقة (Authentication)
+- **URL Configuration:**
+  - **Site URL:** دومينك.
+  - **Redirect URLs:** أضف `https://<دومينك>/auth/callback` (و `http://localhost:3000/auth/callback` للتطوير).
+- **Email Templates:** انسخ محتوى `supabase/templates/magic_link.html` إلى قالب **Magic Link**، و `confirmation.html` إلى **Confirm signup**. القالبان عربيان ويحتويان الرمز `{{ .Token }}` والرابط معاً.
+- **SMTP Settings:** اربط مزود بريد (مثل Resend أو Amazon SES). المزود الافتراضي في Supabase يرسل عدداً محدوداً جداً من الرسائل في الساعة، وغير مناسب للإنتاج.
+- **Google (اختياري):** فعّله من **Providers → Google**، ثم ضع `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`.
+
+### 3. Supabase محلياً (اختياري — للتطوير)
+يتطلب Docker:
+
+```bash
+npx supabase start
+```
+
+```bash
+npx supabase db reset
+```
+
+الأمر الأول يشغّل قاعدة البيانات والمصادقة وصندوق بريد للاختبار على http://127.0.0.1:54324. الأمر الثاني يطبّق الـ migrations والبيانات التجريبية. لعرض مفاتيح البيئة المحلية:
+
+```bash
+npx supabase status -o env
+```
+
+---
+
+## ربط Paddle (الدفع)
+
+ابدأ في [Paddle Sandbox](https://sandbox-vendors.paddle.com)، ثم كرر الخطوات في [حساب الإنتاج](https://vendors.paddle.com) عند الإطلاق.
+
+1. **Catalog → Products:** أنشئ منتجاً باسم «RJ Premium»، وأضف له سعراً **شهرياً متكرراً بـ 1.99 USD**، ثم انسخ معرّف السعر `pri_...`.
+2. **Developer Tools → Authentication:**
+   - أنشئ **Client-side token** وضعه في `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`.
+   - أنشئ **API key** بصلاحية إنشاء جلسات بوابة العميل (Customer portal sessions)، وضعه في `PADDLE_API_KEY`.
+3. **Developer Tools → Notifications → New destination:**
+   - **URL:** `https://<دومينك>/api/webhooks/paddle`
+   - **الأحداث:** كل أحداث `subscription.*`
+   - انسخ **Secret key** إلى `PADDLE_WEBHOOK_SECRET`.
+4. **Checkout → Checkout settings:** اضبط **Default payment link** على `https://<دومينك>/subscribe`.
+5. **في الإنتاج:** يجب أن يوافق Paddle على الدومين (Website approval) قبل قبول المدفوعات الحقيقية.
+6. اختبر الدفع ببطاقات الاختبار الموجودة في [توثيق Paddle](https://developer.paddle.com/)، وتأكد أن الاشتراك يتفعّل تلقائياً بعد الدفع.
+
+> 💡 **الويب هوك يحتاج رابطاً عاماً.** للتجربة من جهازك استخدم أداة نفق مثل `ngrok` أو `cloudflared` أثناء العمل على Sandbox.
+
+---
+
+## لوحة التحكم
+
+لوحة التحكم **مخفية تماماً** ولا تُفتح على `/admin`.
+
+### التفعيل
+1. **ولّد مساراً سرياً** (12 حرفاً على الأقل من `a-z` و `0-9` و `-`):
+
+   ```bash
+   node -e "console.log('ops-' + require('crypto').randomBytes(8).toString('hex'))"
+   ```
+
+2. **ضعه في `ADMIN_PATH`.** المسارات المشهورة مرفوضة (`admin`، `dashboard`، `manage`…)، وإذا تُرك فارغاً تكون اللوحة معطّلة بالكامل.
+3. **سجّل الدخول** بحسابك في الموقع مرة واحدة، ثم رقِّه لمشرف من SQL Editor:
+
+   ```sql
+   update profiles set role = 'admin'
+   where id = (select id from auth.users where email = 'you@example.com');
+   ```
+
+4. **افتح** `https://<دومينك>/<ADMIN_PATH>`. للمشرف فقط يظهر رابط اللوحة أيضاً في صفحة «حسابي».
+
+### الحماية (عدة طبقات)
+1. **`src/proxy.ts`:**
+   - الزائر والمستخدم العادي يحصلان على **نفس صفحة 404** التي يحصل عليها أي رابط غير موجود، فلا يمكن إثبات وجود اللوحة. لا يوجد تحويل لصفحة الدخول.
+   - الصفحات موجودة فعلياً تحت `/admin-console`، وهذا المسار يُرجع 404 دائماً عند فتحه مباشرة، حتى للمشرف.
+   - استجابات اللوحة تحمل `noindex` و `no-store` و `Referrer-Policy: no-referrer`.
+2. **الخادم:** `requireAdmin()` يُستدعى في layout اللوحة وفي **كل** Server Action.
+3. **قاعدة البيانات (RLS):**
+   - التعديلات تتم بجلسة المشرف نفسه وليس بمفتاح `service_role`، فسياسات «الكتابة للمشرفين فقط» تبقى مطبّقة.
+   - المستخدم العادي لا يستطيع الكتابة ولا ترقية نفسه.
+4. **التحقق من المدخلات في الخادم:** روابط البث `https` فقط، والفريق لا يلعب ضد نفسه، والدقائق والنتائج ضمن نطاقها الصحيح.
+
+### ما يمكن عمله في اللوحة
+- **نظرة عامة:** إجمالي المباريات، الجارية الآن، ما يُبث الآن، مشتركو Premium مع إيراد شهري تقديري. كل ذلك يتحدث لحظياً.
+- **المباريات:** قائمة بفلاتر وبحث، إضافة وتعديل (البطولة، الفرق، الموعد بتوقيت `NEXT_PUBLIC_APP_TIMEZONE`، الحالة، رابط HLS، مباراة مميزة)، وحذف.
+- **التحكم المباشر:**
+  - أزرار الانطلاق والاستراحة والشوط الثاني والنهاية، وتعديل الدقيقة.
+  - إضافة الأحداث: أهداف، بطاقات، تبديلات، VAR.
+  - **الأهداف تحدّث النتيجة تلقائياً** داخل معاملة واحدة في قاعدة البيانات، ويمكن تصحيح النتيجة يدوياً.
+  - تحرير الإحصائيات الحية.
+- **الفرق والبطولات:** إضافة فرق وبطولات جديدة.
+- **التحديث اللحظي:** كل تغيير يظهر **فوراً** للمتابعين في الموقع عبر Supabase Realtime، بدون إعادة تحميل.
+
+> 🔐 **توصية:** فعّل المصادقة الثنائية (MFA) لحسابات المشرفين من Supabase Auth.
+
+---
+
+## النشر على الإنتاج
+
+### Vercel (مستحسن)
+1. ارفع المستودع إلى GitHub.
+2. من [vercel.com/new](https://vercel.com/new) استورد المستودع. Next.js يُكتشف تلقائياً.
+3. أضف كل متغيرات البيئة من [الجدول أعلاه](#متغيرات-البيئة) في **Settings → Environment Variables**.
+4. انشر، ثم حدّث الروابط التي تعتمد على الدومين: Redirect URLs في Supabase، ورابط Webhook و Default payment link في Paddle.
+
+### أي خادم Node.js آخر
+
+```bash
+npm ci
+```
+
+```bash
+npm run build
+```
+
+```bash
+npm start
+```
+
+يعمل الخادم على المنفذ 3000 افتراضياً، ويمكن تغييره بالمتغير `PORT`.
+
+---
+
+## قائمة التحقق قبل الإطلاق
+
+- [ ] تطبيق الـ migrations الأربعة على قاعدة بيانات الإنتاج.
+- [ ] ضبط Site URL و Redirect URLs وقوالب البريد ومزود SMTP في Supabase.
+- [ ] ضبط كل متغيرات البيئة، وأن `NEXT_PUBLIC_PADDLE_ENV=production`.
+- [ ] إنشاء منتج وسعر 1.99$ في حساب Paddle **الإنتاجي**، واعتماد الدومين.
+- [ ] Webhook الإنتاج يشير إلى `/api/webhooks/paddle` مع أحداث `subscription.*`.
+- [ ] تجربة اشتراك كاملة على Sandbox: الدفع ← التفعيل ← اختفاء الإعلانات ← الإلغاء.
+- [ ] ضبط `ADMIN_PATH` بقيمة عشوائية، وترقية حساب المشرف، وتفعيل MFA له.
+- [ ] روابط بث HLS **مرخّصة** للمباريات.
+- [ ] ربط شبكة إعلانات حقيقية مكان المساحات الإعلانية (`src/components/ads/BannerAd.tsx` و `src/components/player/PreRollAd.tsx`).
+- [ ] صفحات الخصوصية والشروط (مطلوبة لاعتماد Paddle).
+
+---
+
+## الأوامر
+
+| الأمر | الوظيفة |
+|---|---|
+| `npm run dev` | خادم التطوير على http://localhost:3000 |
+| `npm run build` | بناء نسخة الإنتاج |
+| `npm start` | تشغيل نسخة الإنتاج (بعد البناء) |
+| `npm run lint` | فحص الأنواع (TypeScript) |
+| `npm test` | اختبارات الوحدة (Vitest) |
+| `npm run test:e2e` | الاختبار الشامل لنظام الاشتراك |
+| `npm run test:e2e:admin` | الاختبار الشامل للوحة التحكم |
+
+---
+
+## الاختبارات
+
+### اختبارات الوحدة (بدون أي إعداد)
+
+```bash
+npm test
+```
+
+38 اختباراً تغطي:
+- التحقق من توقيع Paddle، ومنطق تفعيل الاشتراك وإلغائه.
+- المسار السري للوحة التحكم، والتحقق من مدخلات النماذج.
+- تحويل المناطق الزمنية.
+
+### الاختبارات الشاملة (End-to-End)
+متصفح حقيقي (Playwright) على Supabase محلي، ويتطلب Docker و ffmpeg:
+- **الاشتراك (39 فحصاً):** الدخول ← الدفع ← Webhook ← Premium ← الإلغاء، وفحوصات RLS.
+- **لوحة التحكم (60 فحصاً):** الإخفاء ← الصلاحيات ← إدارة المباريات ← التحديث اللحظي ← RLS.
+
+**1. شغّل Supabase المحلي** وطبّق البيانات:
+
+```bash
+npx supabase start
+```
+
+```bash
+npx supabase db reset
+```
+
+**2. أنشئ `.env.local`** بمفاتيح Supabase المحلية (من `npx supabase status -o env`) وقيم Paddle وهمية:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+NEXT_PUBLIC_PADDLE_ENV=sandbox
+NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=test_local_fake_token
+NEXT_PUBLIC_PADDLE_PRICE_ID=pri_local_premium
+PADDLE_WEBHOOK_SECRET=pdl_ntfset_local_test_secret
+ADMIN_PATH=ops-local-test-123
+```
+
+**3. في نافذة طرفية مستقلة**، شغّل بث HLS محلياً بجودتين (720p و360p) على http://localhost:8090/master.m3u8:
+
+```bash
+bash scripts/dev-hls-stream.sh
+```
+
+**4. في نافذة ثانية**، ابنِ الموقع وشغّله على المنفذ 3100:
+
+```bash
+npm run build && npx next start -p 3100
+```
+
+**5. في نافذة ثالثة**، شغّل الاختبارات:
+
+```bash
+npm run test:e2e
+```
+
+```bash
+npm run test:e2e:admin
+```
+
+**ملاحظات:**
+- مكتبة Paddle.js تُستبدل بنسخة وهمية داخل المتصفح، والـ Webhooks تُرسَل موقّعة بـ `PADDLE_WEBHOOK_SECRET`، فلا يلزم حساب Paddle.
+- لقطات الشاشة تُحفظ في `tests/e2e/screenshots/`، وهو مستثنى من Git.
+
+---
 
 ## هيكل المشروع
 
 ```
-src/
-├── app/                        # الصفحات (App Router)
-│   ├── layout.tsx              # الهيكل العام: RTL، خط Cairo، الهيدر والفوتر
-│   ├── (home)/page.tsx         # ✅ الرئيسية: جدول المباريات الحية واليومية
-│   ├── (home)/loading.tsx      # Skeleton أثناء التحميل
-│   ├── match/[id]/page.tsx     # ✅ تفاصيل المباراة: البث، الأحداث، الإحصائيات، التشكيلة
-│   ├── subscribe/              # ✅ صفحة الاشتراك + الدفع (Paddle) + صفحة نجاح الدفع
-│   ├── login/                  # ✅ تسجيل الدخول برمز البريد / الرابط السحري / Google
-│   ├── account/                # ✅ حسابي: حالة الاشتراك وإدارته
-│   ├── auth/                   # callback + signout
-│   ├── api/webhooks/paddle/    # ✅ استقبال أحداث Paddle وتفعيل Premium
-│   ├── admin-console/          # ✅ لوحة التحكم (مسار داخلي — يُفتح فقط عبر ADMIN_PATH السري)
-│   └── admin/page.tsx          # ⏳ الخطوة 4: لوحة التحكم
-├── components/
-│   ├── layout/                 # Header, Footer
-│   ├── matches/                # MatchCard, LeagueSection, DateSelector, MatchFilters,
-│   │                           # FeaturedMatch, MatchStatusBadge, TeamCrest, LiveRefresher
-│   ├── match/                  # MatchHeader, MatchTabs, MatchTimeline, MatchStats, Lineups, LiveMatchUpdates
-│   ├── player/                 # VideoPlayer (HLS), PreRollAd, StreamPlaceholder
-│   ├── ads/                    # BannerAd (تُخفى للمشتركين), PremiumPromo
-│   └── ui/                     # أيقونات SVG، ComingSoon
-├── lib/
-│   ├── supabase/               # عملاء Supabase (server / browser / admin / proxy) + config
-│   ├── paddle/                 # التحقق من التوقيع، منطق المزامنة، Customer Portal
-│   ├── admin/                  # المسار السري، صلاحيات المشرف، التحقق من المدخلات، بيانات اللوحة
-│   ├── data/                   # طبقة البيانات: matches.ts, user.ts, mock-data.ts
-│   └── utils/                  # التواريخ والمنطقة الزمنية، حالات المباراة
-└── types/database.ts           # أنواع الجداول
-supabase/migrations/            # مخطط قاعدة البيانات + سياسات RLS
+├── src/
+│   ├── app/                         # الصفحات (App Router)
+│   │   ├── layout.tsx               # الهيكل العام: RTL، خط Cairo، الهيدر والفوتر
+│   │   ├── (home)/                  # الرئيسية + Skeleton التحميل
+│   │   ├── match/[id]/              # تفاصيل المباراة: البث، الأحداث، الإحصائيات، التشكيلة
+│   │   ├── subscribe/               # صفحة الاشتراك + الدفع (Paddle) + صفحة نجاح الدفع
+│   │   ├── login/                   # الدخول برمز البريد / الرابط / Google
+│   │   ├── account/                 # حسابي: حالة الاشتراك وإدارته
+│   │   ├── auth/                    # callback + تسجيل الخروج
+│   │   ├── api/webhooks/paddle/     # استقبال أحداث Paddle
+│   │   ├── api/subscription/status/ # حالة الاشتراك (لصفحة نجاح الدفع)
+│   │   ├── admin-console/           # لوحة التحكم (مسار داخلي — يُفتح فقط عبر ADMIN_PATH)
+│   │   └── icon.svg                 # أيقونة الموقع
+│   ├── components/
+│   │   ├── layout/                  # Header, Footer
+│   │   ├── matches/                 # بطاقات المباريات، شريط التواريخ، الفلاتر
+│   │   ├── match/                   # رأس المباراة، التبويبات، الأحداث، الإحصائيات، التشكيلة
+│   │   ├── player/                  # مشغل HLS، إعلان ما قبل البث، العد التنازلي
+│   │   ├── ads/                     # المساحات الإعلانية، بطاقة Premium
+│   │   ├── admin/                   # مكونات لوحة التحكم
+│   │   └── ui/                      # أيقونات SVG ومكونات عامة
+│   ├── lib/
+│   │   ├── supabase/                # عملاء Supabase (server / browser / admin / proxy)
+│   │   ├── paddle/                  # التحقق من التوقيع، منطق الاشتراك، بوابة العميل
+│   │   ├── admin/                   # المسار السري، الصلاحيات، التحقق من المدخلات
+│   │   ├── data/                    # جلب المباريات والمستخدم + البيانات التجريبية
+│   │   └── utils/                   # التواريخ والمناطق الزمنية
+│   ├── types/database.ts            # أنواع الجداول
+│   └── proxy.ts                     # تجديد الجلسة + حماية الصفحات واللوحة
+├── supabase/
+│   ├── migrations/                  # مخطط قاعدة البيانات + RLS (4 ملفات)
+│   ├── templates/                   # قوالب البريد العربية
+│   ├── seed.sql                     # بيانات تجريبية للتطوير
+│   └── config.toml                  # إعدادات Supabase المحلي
+├── tests/e2e/                       # الاختبارات الشاملة (Playwright)
+├── scripts/dev-hls-stream.sh        # بث HLS محلي للاختبار
+└── .env.example                     # قالب متغيرات البيئة
 ```
 
-## ملاحظات تقنية
-- الصفحة الرئيسية **Server Component**: البيانات تُجلب على الخادم، والفلاتر والتواريخ عبر رابط الصفحة (`?date=2026-11-07&filter=live`) فتكون قابلة للمشاركة وسريعة.
-- عند وجود مباريات مباشرة تتحدث الصفحة تلقائياً كل 30 ثانية (`LiveRefresher`)، ويمكن لاحقاً التحويل إلى Supabase Realtime.
-- الإعلانات (`BannerAd`) تختفي تلقائياً إذا كان `profiles.is_premium = true`.
-- المنطقة الزمنية الافتراضية `Asia/Bahrain` وتُغيَّر من `NEXT_PUBLIC_APP_TIMEZONE`.
+---
 
-## صفحة المباراة
-- **المشغل** (`components/player/VideoPlayer.tsx`): يشغّل روابط HLS (`.m3u8`) بمكتبة hls.js، ويستخدم التشغيل الأصلي في Safari وiOS. فيه:
-  - اختيار الجودة
-  - زر «العودة للمباشر»
-  - ملء الشاشة وصورة داخل صورة
-  - اختصارات لوحة المفاتيح: `K` تشغيل/إيقاف، `M` كتم، `F` ملء الشاشة
-  - إعادة المحاولة تلقائياً عند انقطاع الشبكة
-  - إعلان مدته 5 ثوانٍ قبل البث للمستخدمين المجانيين
-- **التحديث اللحظي**: مع Supabase يتحدث كل شيء فوراً عبر Realtime. بدونها تتحدث الصفحة كل 30 ثانية، ولا ينقطع الفيديو ولا يتغير التبويب المفتوح.
-- **البيانات**: الإحصائيات محفوظة في `matches.stats`، والتشكيلات في `matches.lineups`، والأحداث في جدول `match_events`. الأشكال الكاملة في `src/types/database.ts`.
+## كيف يعمل النظام
 
-## الاشتراكات والمصادقة
+### البيانات والتحديث اللحظي
+- الصفحات **Server Components**، والبيانات تُجلب على الخادم.
+- الفلاتر والتواريخ في الرابط (مثل `/?date=2026-11-07&filter=live`)، فتكون قابلة للمشاركة.
+- مع Supabase، كل تغيير في المباريات والأحداث يصل للمتصفح عبر **Realtime** فتتحدث الصفحة فوراً، **بدون إيقاف الفيديو** وبدون تغيير التبويب المفتوح. بدون Supabase تتحدث الصفحة كل 30 ثانية أثناء المباريات المباشرة.
+- **أماكن تخزين بيانات المباراة:**
+  - الإحصائيات: `matches.stats`
+  - التشكيلات: `matches.lineups`
+  - الأحداث: جدول `match_events`
+- الأشكال الكاملة للبيانات في `src/types/database.ts`.
 
-### كيف يعمل الاشتراك
-1. المستخدم يسجل الدخول (رمز من 6 أرقام أو رابط في البريد، أو Google).
-2. في `/subscribe` يضغط «اشترك الآن» فتُفتح نافذة دفع Paddle، ويُمرَّر معها `user_id` في `customData`.
-3. بعد الدفع ترسل Paddle حدث webhook إلى `/api/webhooks/paddle`، والخادم:
-   - يتحقق من التوقيع (HMAC، وحد أقصى 5 دقائق).
-   - يتجاهل الأحداث المكررة، والأحداث القديمة التي تصل متأخرة.
-   - يحفظ الاشتراك ويحدّث `profiles.is_premium` و `premium_until`.
-4. صفحة `/subscribe/success` تنتظر التفعيل وتتحدث تلقائياً. بعدها تختفي الإعلانات ويُفتح بث HD (النسخة المجانية حدها 480p).
-5. الإلغاء من «حسابي» ← بوابة Paddle. يبقى Premium حتى نهاية الشهر المدفوع.
+### الاشتراك (Paddle)
+1. المستخدم يسجل الدخول، ثم يضغط «اشترك الآن» فتفتح نافذة دفع Paddle، ويُرسَل معها معرّف حسابه (`user_id`) في `customData`.
+2. بعد الدفع ترسل Paddle Webhook إلى `/api/webhooks/paddle`، والخادم:
+   - يتحقق من **التوقيع** (HMAC، وحد أقصى 5 دقائق).
+   - يتجاهل **الأحداث المكررة**، والأحداث القديمة التي تصل متأخرة.
+   - يحدّث `profiles.is_premium` و `premium_until`.
+3. صفحة `/subscribe/success` تنتظر التفعيل وتتحدث تلقائياً.
+4. **عند الإلغاء** يبقى Premium حتى نهاية الشهر المدفوع.
+5. **عند فشل الدفع** يبقى الوصول حتى نهاية الفترة الحالية فقط.
 
-> **أمان:** المستخدم لا يستطيع تعديل `is_premium` بنفسه، فسياسات RLS لا تسمح بالكتابة. الكتابة تتم فقط من الـ webhook بمفتاح `service_role`.
+> **أمان:** المستخدم لا يستطيع منح نفسه Premium. سياسات RLS تمنع الكتابة، والتحديث يتم فقط من الـ Webhook بمفتاح `service_role`.
 
-### إعداد Paddle
-1. **Catalog → Products:** أنشئ منتج «RJ Premium» وسعراً شهرياً بـ 1.99 USD، وانسخ `pri_...`.
-2. **Developer Tools → Authentication:**
-   - أنشئ Client-side token.
-   - أنشئ API key بصلاحية Customer portal sessions.
-3. **Developer Tools → Notifications:** أضف وجهة webhook على `https://<دومينك>/api/webhooks/paddle`، وفعّل أحداث `subscription.*`، ثم انسخ الـ Secret.
-4. **Checkout → Checkout settings:** اضبط Default payment link على `https://<دومينك>/subscribe`. في الإنتاج يجب أن يوافق Paddle على الدومين.
-5. ضع القيم في متغيرات البيئة كما في `.env.example`، وابدأ بـ `sandbox` واختبر ببطاقات Paddle التجريبية.
+### الإعلانات
+- **`BannerAd`** و **`PreRollAd`** حالياً مساحات جاهزة، لم تُربط بشبكة إعلانات بعد. ضع فيها سكربت Google AdSense أو Google Ad Manager.
+- تختفي تلقائياً للمشتركين.
 
-### إعداد Supabase Auth (الإنتاج)
-- **Authentication → URL Configuration:** ضع Site URL على دومينك، وأضف `https://<دومينك>/auth/callback` إلى Redirect URLs.
-- **Authentication → Email Templates:** انسخ القالبين من `supabase/templates/` (يحتويان الرمز `{{ .Token }}` والرابط).
-- **Authentication → SMTP:** اربط مزود بريد (Resend أو SES…). مزود Supabase الافتراضي محدود جداً للإنتاج.
-- **Google (اختياري):** فعّله من Providers، ثم ضع `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`.
+---
 
-### وضع العرض (بدون Supabase)
-إذا لم تُضبط مفاتيح Supabase، يظهر في صفحة الاشتراك زر «جرّب Premium» لمعاينة التجربة بدون دفع. هذا الزر لا يعمل أبداً عند ربط قاعدة البيانات.
+## حل المشاكل الشائعة
 
-## الاختبارات
-
-```bash
-npm test            # اختبارات الوحدة: التوقيع، الاشتراك، مسار اللوحة، التحقق، المناطق الزمنية (Vitest)
-```
-
-اختبارات شاملة على Supabase محلي (تتطلب Docker): الاشتراك (39 فحصاً) ولوحة التحكم (60 فحصاً):
-
-```bash
-npx supabase start && npx supabase db reset
-bash scripts/dev-hls-stream.sh &        # بث HLS محلي
-npm run build && npx next start -p 3100 &
-npm run test:e2e                        # الاشتراك
-node tests/e2e/admin.e2e.cjs            # لوحة التحكم (يتطلب ADMIN_PATH في .env.local)
-```
-
-لتفاصيل `.env.local` المطلوب انظر رأس الملف `tests/e2e/subscription.e2e.cjs`.
-
-## لوحة التحكم
-
-### الوصول
-- **المسار سري** ويُضبط من `ADMIN_PATH`، ويجب أن يكون 12 حرفاً على الأقل. المسارات المشهورة مرفوضة (`admin`، `dashboard`…). لتوليد قيمة:
-  ```bash
-  node -e "console.log('ops-' + require('crypto').randomBytes(8).toString('hex'))"
-  ```
-- **الوصول:** `https://<دومينك>/<ADMIN_PATH>`. للمشرف فقط يظهر رابط اللوحة في «حسابي».
-- **لترقية حساب إلى مشرف** (من SQL Editor في Supabase):
-  ```sql
-  update profiles set role = 'admin' where id = (select id from auth.users where email = 'you@example.com');
-  ```
-- **إذا لم يُضبط `ADMIN_PATH`** تكون اللوحة معطّلة بالكامل.
-
-### طبقات الحماية
-1. **`proxy.ts`:**
-   - الزائر والمستخدم العادي يحصلان على **نفس صفحة 404** التي يحصل عليها أي رابط غير موجود، فلا يمكن إثبات وجود اللوحة. لا يوجد تحويل لصفحة الدخول.
-   - الصفحات موجودة فعلياً تحت `/admin-console`، وهذا المسار يُرجع 404 دائماً عند فتحه مباشرة، حتى للمشرف.
-   - استجابات اللوحة تحمل `noindex` و`no-store` و`Referrer-Policy: no-referrer`.
-2. **الخادم:** `requireAdmin()` في layout اللوحة وفي **كل** Server Action، وتُرجع 404 لغير المشرف.
-3. **قاعدة البيانات (RLS):**
-   - الإجراءات تُنفَّذ بجلسة المشرف نفسه وليس بمفتاح `service_role`، فسياسات الكتابة للمشرفين فقط تبقى مطبّقة.
-   - الدالتان `add_match_event` و`delete_match_event` تتحققان من `is_admin()`.
-   - المستخدم لا يستطيع ترقية نفسه لمشرف.
-4. **التحقق من المدخلات في الخادم:** روابط البث تقبل `https` فقط (يمنع `javascript:`)، والفريق لا يلعب ضد نفسه، والدقائق والنتائج ضمن نطاقها الصحيح.
-5. **المسار السري** لا يصل أبداً للمتصفح لغير المشرف، ولا يظهر في ملفات JavaScript.
-
-### المزايا
-- **نظرة عامة:**
-  - إجمالي المباريات ومباريات اليوم.
-  - المباريات الجارية، وما يُبث منها الآن.
-  - مشتركو Premium مع إيراد شهري تقديري.
-  - كل ذلك يتحدث لحظياً.
-- **المباريات:**
-  - قائمة بفلاتر (قادمة، جارية، منتهية) وبحث.
-  - إضافة وتعديل: البطولة، الفرق، الموعد بتوقيت البحرين، الحالة، الملعب، رابط HLS، مباراة مميزة.
-  - حذف المباراة مع خطوة تأكيد.
-- **التحكم المباشر:**
-  - أزرار: انطلاق، استراحة، شوط ثانٍ، نهاية.
-  - تعديل الدقيقة (−1 / +1 / +5).
-  - أحداث المباراة: أهداف وركلات جزاء وأهداف عكسية، بطاقات، تبديلات، VAR.
-  - **الأهداف تحدّث النتيجة تلقائياً** داخل معاملة واحدة في قاعدة البيانات، ويمكن تصحيح النتيجة يدوياً.
-  - تحرير الإحصائيات الحية.
-- **الفرق والبطولات:** إضافة فرق وبطولات جديدة.
-- **التحديث اللحظي:** كل تغيير يظهر فوراً للمتابعين في صفحة المباراة والصفحة الرئيسية عبر Supabase Realtime، بدون إعادة تحميل.
-
-> **توصية للإنتاج:** فعّل المصادقة الثنائية (MFA) لحسابات المشرفين من Supabase Auth.
+| المشكلة | الحل |
+|---|---|
+| تسجيل الدخول غير ظاهر | مفاتيح Supabase غير مضبوطة في `.env.local` — أضفها ثم أعد التشغيل |
+| رابط البريد يعيد لصفحة الدخول مع خطأ | أضف `<دومينك>/auth/callback` إلى Redirect URLs في Supabase، أو استخدم الرمز المكوّن من 6 أرقام بدل الرابط (الرابط يجب فتحه في نفس المتصفح) |
+| «طلبات كثيرة» عند طلب الرمز | حد الإرسال في Supabase — انتظر دقيقة، أو اربط مزود SMTP خاص للإنتاج |
+| الدفع تم لكن Premium لم يتفعّل | تأكد من `PADDLE_WEBHOOK_SECRET` و `SUPABASE_SERVICE_ROLE_KEY`، ومن أن رابط Webhook في Paddle صحيح وعام. راجع سجل الأحداث في Paddle → Notifications |
+| «الدفع غير مُفعّل بعد» في صفحة الاشتراك | `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` أو `NEXT_PUBLIC_PADDLE_PRICE_ID` غير مضبوط — أضفه ثم أعد البناء |
+| لوحة التحكم تعطي 404 | تحقق من: `ADMIN_PATH` مضبوط (12+ حرفاً)، حسابك `role = 'admin'`، وأنك مسجل الدخول. أي شرط ناقص يعطي 404 عمداً |
+| البث لا يعمل | يجب أن يكون الرابط `https` وأن يسمح خادم البث بـ CORS لدومينك |
+| `supabase start` يفشل في تنزيل الصور | إذا كان سجل الصور الافتراضي محجوباً في شبكتك: `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io npx supabase start` |
+| `bash scripts/dev-hls-stream.sh` يقول إن المنفذ مستخدم | بث سابق ما زال يعمل على المنفذ 8090 — أوقفه أولاً |
