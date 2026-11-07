@@ -12,6 +12,9 @@
   --color-brand-fg: #052e14;
   --color-live: #ef4444;
   --color-gold: #f5b83d;
+  --color-home: #22c55e;
+  --color-away: #60a5fa;
+  --color-pitch: #14532d;
 
   --font-sans: var(--font-cairo), system-ui, sans-serif;
 }

@@ -1,10 +1,11 @@
 import "server-only";
-import type { League, MatchWithRelations } from "@/types/database";
+import { cache } from "react";
+import type { League, MatchDetails, MatchEvent, MatchWithRelations } from "@/types/database";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, toDateKey } from "@/lib/utils/date";
 import { isLive } from "@/lib/utils/match";
-import { getMockMatches } from "./mock-data";
+import { getMockMatch, getMockMatches } from "./mock-data";
 
 const MATCH_SELECT = `
   *,
@@ -63,3 +64,33 @@ export function groupByLeague(matches: MatchWithRelations[]): LeagueGroup[] {
   }
   return sorted;
 }
+
+/** تفاصيل مباراة واحدة مع الأحداث والإحصائيات والتشكيلات. مُخزّنة لكل طلب (تُستخدم في الصفحة و generateMetadata) */
+export const getMatchById = cache(async (id: string): Promise<MatchDetails | null> => {
+  if (!isSupabaseConfigured) return getMockMatch(id);
+
+  // المعرّفات في Supabase من نوع uuid — نتجنب استعلاماً فاشلاً لقيم غير صالحة
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+
+  const supabase = await createClient();
+  const [matchRes, eventsRes] = await Promise.all([
+    supabase.from("matches").select(MATCH_SELECT).eq("id", id).maybeSingle(),
+    supabase
+      .from("match_events")
+      .select("*")
+      .eq("match_id", id)
+      .order("minute")
+      .order("extra_minute", { nullsFirst: true }),
+  ]);
+
+  if (matchRes.error) console.error("[getMatchById]", matchRes.error.message);
+  if (!matchRes.data) return null;
+
+  const match = matchRes.data as MatchDetails;
+  return {
+    ...match,
+    stats: match.stats ?? {},
+    lineups: match.lineups ?? null,
+    events: (eventsRes.data ?? []) as MatchEvent[],
+  };
+});
