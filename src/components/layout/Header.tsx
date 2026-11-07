@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BallIcon, CrownIcon } from "@/components/ui/icons";
 import { getCurrentUser, isPremiumUser } from "@/lib/data/user";
+import { SITE_NAME } from "@/lib/brand";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 // العناصر ذات soon: true تُفعَّل في المراحل القادمة
@@ -16,11 +17,13 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-extrabold">
+        <Link href="/" aria-label={`${SITE_NAME} — الرئيسية`} className="flex items-center gap-2 text-lg font-extrabold">
           <span className="grid size-8 place-items-center rounded-lg bg-brand text-brand-fg">
             <BallIcon width={18} height={18} />
           </span>
-          RJ <span className="text-brand">Sports</span>
+          <span>
+            GoalMood <span className="text-brand">plus</span>
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 sm:flex">

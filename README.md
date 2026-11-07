@@ -1,4 +1,4 @@
-# RJ Sports Platform ⚽
+# GoalMood plus ⚽
 
 منصة رياضية عربية لنتائج المباريات المباشرة والبث، شبيهة بفكرة FotMob، مع اشتراك شهري بـ **1.99$** لإزالة الإعلانات وفتح البث بجودة HD، ولوحة تحكم مخفية لإدارة المباريات لحظياً.
 
@@ -88,7 +88,7 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | لا | للتشغيل الكامل | من Supabase: Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | لا | للتشغيل الكامل | المفتاح العام (anon) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **نعم** | للاشتراكات | مفتاح `service_role`، يستخدمه Webhook الدفع فقط |
-| `NEXT_PUBLIC_SITE_URL` | لا | مستحسن | دومين الموقع (لروابط البريد وGoogle)، مثل `https://rjsports.com` |
+| `NEXT_PUBLIC_SITE_URL` | لا | مستحسن | دومين الموقع (لروابط البريد وGoogle)، مثل `https://goalmoodplus.com` |
 | `NEXT_PUBLIC_APP_TIMEZONE` | لا | لا | المنطقة الزمنية للمواعيد (الافتراضي `Asia/Bahrain`) |
 | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` | لا | لا | `true` لإظهار زر Google |
 | `NEXT_PUBLIC_PADDLE_ENV` | لا | للدفع | `sandbox` للتجربة أو `production` |
@@ -163,7 +163,7 @@ npx supabase status -o env
 
 ابدأ في [Paddle Sandbox](https://sandbox-vendors.paddle.com)، ثم كرر الخطوات في [حساب الإنتاج](https://vendors.paddle.com) عند الإطلاق.
 
-1. **Catalog → Products:** أنشئ منتجاً باسم «RJ Premium»، وأضف له سعراً **شهرياً متكرراً بـ 1.99 USD**، ثم انسخ معرّف السعر `pri_...`.
+1. **Catalog → Products:** أنشئ منتجاً باسم «GoalMood plus Premium»، وأضف له سعراً **شهرياً متكرراً بـ 1.99 USD**، ثم انسخ معرّف السعر `pri_...`.
 2. **Developer Tools → Authentication:**
    - أنشئ **Client-side token** وضعه في `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`.
    - أنشئ **API key** بصلاحية إنشاء جلسات بوابة العميل (Customer portal sessions)، وضعه في `PADDLE_API_KEY`.

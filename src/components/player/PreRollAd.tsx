@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PREMIUM_NAME, SITE_NAME } from "@/lib/brand";
 import { useEffect, useState } from "react";
 
 const AD_SECONDS = 5;
@@ -23,7 +24,7 @@ export function PreRollAd({ onDone }: { onDone: () => void }) {
       <span className="absolute top-3 start-3 rounded bg-gold px-1.5 py-0.5 text-[10px] font-bold text-black">إعلان</span>
       <p className="text-lg font-bold">مساحة إعلانية قبل البث</p>
       <Link href="/subscribe" className="text-sm font-semibold text-gold hover:underline">
-        شاهد بدون إعلانات مع RJ Premium — 1.99$ شهرياً
+        شاهد بدون إعلانات مع {SITE_NAME} {PREMIUM_NAME} — 1.99$ شهرياً
       </Link>
 
       <button

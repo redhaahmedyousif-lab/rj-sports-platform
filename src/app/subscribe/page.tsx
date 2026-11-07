@@ -4,13 +4,18 @@ import { CrownIcon } from "@/components/ui/icons";
 import { getCurrentUser, isPremiumUser } from "@/lib/data/user";
 import { isPaddleCheckoutConfigured } from "@/lib/paddle/config";
 import { PREMIUM_PERKS } from "@/lib/premium";
+import { PREMIUM_NAME, SITE_NAME, pageOpenGraph } from "@/lib/brand";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { toggleDemoPremium } from "./actions";
 import { CheckoutButton } from "./CheckoutButton";
 
 export const metadata: Metadata = {
-  title: "RJ Premium — بدون إعلانات",
-  description: "اشترك في RJ Premium مقابل 1.99$ شهرياً: بدون إعلانات، بث HD، وإلغاء في أي وقت.",
+  title: `${PREMIUM_NAME} — بدون إعلانات`,
+  description: `اشترك في ${SITE_NAME} ${PREMIUM_NAME} مقابل 1.99$ شهرياً: بدون إعلانات، بث HD، وإلغاء في أي وقت.`,
+  ...pageOpenGraph(
+    `${PREMIUM_NAME} — بدون إعلانات`,
+    `اشترك في ${SITE_NAME} ${PREMIUM_NAME} مقابل 1.99$ شهرياً: بدون إعلانات، بث HD، وإلغاء في أي وقت.`,
+  ),
 };
 
 const COMPARISON: { label: string; free: string | boolean; premium: string | boolean }[] = [
@@ -51,7 +56,7 @@ export default async function SubscribePage() {
           <CrownIcon width={28} height={28} />
         </span>
         <h1 className="mb-2 text-3xl font-extrabold sm:text-4xl">
-          RJ <span className="text-gold">Premium</span>
+          {SITE_NAME} <span className="text-gold">{PREMIUM_NAME}</span>
         </h1>
         <p className="text-muted">شاهد كل مباراة بدون إعلانات وبأعلى جودة — بأقل من سعر كوب قهوة.</p>
       </header>
@@ -84,7 +89,7 @@ export default async function SubscribePage() {
         {/* المقارنة */}
         <section className="overflow-hidden rounded-2xl border border-border bg-surface">
           <table className="w-full text-sm">
-            <caption className="sr-only">مقارنة بين النسخة المجانية و Premium</caption>
+            <caption className="sr-only">مقارنة بين النسخة المجانية و {PREMIUM_NAME}</caption>
             <thead>
               <tr className="border-b border-border bg-surface-2 text-xs text-muted">
                 <th scope="col" className="px-4 py-3 text-start font-semibold">الميزة</th>

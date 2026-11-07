@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SITE_NAME } from "@/lib/brand";
 import { getCurrentUser } from "@/lib/data/user";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { safeNextPath } from "@/lib/utils/url";
@@ -22,7 +23,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="mx-auto max-w-md py-6">
       <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
         <h1 className="mb-1 text-2xl font-extrabold">تسجيل الدخول</h1>
-        <p className="mb-6 text-sm text-muted">ادخل أو أنشئ حساباً جديداً بخطوة واحدة.</p>
+        <p className="mb-6 text-sm text-muted">ادخل إلى {SITE_NAME} أو أنشئ حساباً جديداً بخطوة واحدة.</p>
 
         {params.error && ERRORS[params.error] && (
           <p role="alert" className="mb-4 rounded-lg bg-live/10 px-3 py-2 text-sm text-live ring-1 ring-live/30">

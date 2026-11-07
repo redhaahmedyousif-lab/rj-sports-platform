@@ -13,6 +13,7 @@ import { StreamPlaceholder } from "@/components/player/StreamPlaceholder";
 import { VideoPlayer } from "@/components/player/VideoPlayer";
 import { getMatchById, getMatchesByDate } from "@/lib/data/matches";
 import { isPremiumUser } from "@/lib/data/user";
+import { pageOpenGraph } from "@/lib/brand";
 import { todayKey } from "@/lib/utils/date";
 import { hasStarted, isLive } from "@/lib/utils/match";
 
@@ -27,10 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!match) return { title: "المباراة غير موجودة" };
 
   const title = `${match.home_team.name} ضد ${match.away_team.name}`;
-  return {
-    title,
-    description: `${title} — ${match.league.name}: البث المباشر، الأحداث، الإحصائيات والتشكيلة.`,
-  };
+  const description = `${title} — ${match.league.name}: البث المباشر، الأحداث، الإحصائيات والتشكيلة.`;
+  return { title, description, ...pageOpenGraph(title, description) };
 }
 
 export default async function MatchPage({ params, searchParams }: Props) {

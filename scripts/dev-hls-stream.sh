@@ -2,7 +2,7 @@
 # بث HLS مباشر محلي (720p + 360p) لاختبار المشغل — يتطلب ffmpeg و python3
 # الاستخدام: bash scripts/dev-hls-stream.sh   ثم الرابط: http://localhost:8090/master.m3u8
 set -euo pipefail
-DIR="${HLS_DIR:-/tmp/rj-hls}"
+DIR="${HLS_DIR:-/tmp/goalmood-hls}"
 PORT=8090
 
 if python3 -c "import socket,sys; s=socket.socket(); sys.exit(0 if s.connect_ex(('127.0.0.1', $PORT)) == 0 else 1)"; then

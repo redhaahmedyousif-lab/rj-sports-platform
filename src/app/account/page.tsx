@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CrownIcon } from "@/components/ui/icons";
 import { getAdminSlug } from "@/lib/admin/path";
+import { PREMIUM_NAME } from "@/lib/brand";
 import { getCurrentProfile, getCurrentUser, getLatestSubscription, isPremiumUser } from "@/lib/data/user";
 import { APP_TIMEZONE } from "@/lib/utils/date";
 import { openBillingPortal } from "../subscribe/actions";
@@ -61,7 +62,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-extrabold">
             <CrownIcon className={isPremium ? "text-gold" : "text-muted"} />
-            {isPremium ? "RJ Premium" : "النسخة المجانية"}
+            {isPremium ? `اشتراك ${PREMIUM_NAME}` : "النسخة المجانية"}
           </h2>
           {status && <span className={`rounded-full px-3 py-1 text-xs font-bold ${status.className}`}>{status.text}</span>}
         </div>

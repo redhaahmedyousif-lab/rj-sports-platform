@@ -80,7 +80,7 @@ const PADDLE_STUB = `window.PaddleBillingV1=window.Paddle={Initialized:false,Env
   await p.getByRole('button', { name: 'أرسل رمز الدخول' }).click();
   await p.getByLabel('رمز الدخول').waitFor();
   const mail = await latestMail(email);
-  check('البريد وصل بالعربية مع رمز ورابط', mail.subject === 'رمز الدخول إلى RJ Sports' && /^\d{6}$/.test(mail.token) && !!mail.link, mail.subject);
+  check('البريد وصل بالعربية مع رمز ورابط', mail.subject === 'رمز الدخول إلى GoalMood plus' && /^\d{6}$/.test(mail.token) && !!mail.link, mail.subject);
   await p.screenshot({ path: shot('s2-code.png') });
   await p.getByLabel('رمز الدخول').fill('000000');
   await p.getByRole('button', { name: 'تسجيل الدخول' }).click();
@@ -157,7 +157,7 @@ const PADDLE_STUB = `window.PaddleBillingV1=window.Paddle={Initialized:false,Env
   // إلغاء مجدول ثم إلغاء نهائي، وحدث قديم متأخر
   await webhook('subscription.updated', { ...sub, scheduled_change: { action: 'cancel', effective_at: periodEnd } });
   await p.goto(BASE + '/account');
-  check('إلغاء مجدول: ما زال Premium مع تاريخ الانتهاء', await p.getByText('ينتهي اشتراكك ولن يتجدد في').isVisible() && await p.getByText('RJ Premium').isVisible());
+  check('إلغاء مجدول: ما زال Premium مع تاريخ الانتهاء', await p.getByText('ينتهي اشتراكك ولن يتجدد في').isVisible() && await p.getByText('اشتراك Premium').isVisible());
   const canceledAt = new Date().toISOString();
   await webhook('subscription.canceled', { ...sub, status: 'canceled', canceled_at: canceledAt, current_billing_period: null, scheduled_change: null }, canceledAt);
   const stale = await webhook('subscription.activated', sub, new Date(Date.now() - 3600e3).toISOString());

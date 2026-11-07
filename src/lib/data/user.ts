@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 /** كوكي "Premium التجريبي" — يعمل فقط عندما لا تكون Supabase مضبوطة (وضع العرض) */
-export const DEMO_PREMIUM_COOKIE = "rj_demo_premium";
+export const DEMO_PREMIUM_COOKIE = "gm_demo_premium";
 
 export interface CurrentUser {
   id: string;
